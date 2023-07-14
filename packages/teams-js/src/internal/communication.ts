@@ -537,6 +537,7 @@ function createMessageRequest(func: string, args: any[]): MessageRequest {
     func: func,
     timestamp: Date.now(),
     args: args || [],
+    apiversion: 'v2',
   };
 }
 
