@@ -47,7 +47,6 @@ export interface MessageRequest {
   func: string;
   timestamp?: number;
   args?: any[];
-  apiversion?: string;
 }
 
 /**
