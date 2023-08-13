@@ -532,12 +532,12 @@ export function sendMessageEventToChild(actionName: string, args?: any[]): void 
  * Limited to Microsoft-internal use
  */
 function createMessageRequest(func: string, args: any[]): MessageRequest {
+  args.push('v2' as any);
   return {
     id: CommunicationPrivate.nextMessageId++,
     func: func,
     timestamp: Date.now(),
     args: args || [],
-    apiversion: 'v2',
   };
 }
 
