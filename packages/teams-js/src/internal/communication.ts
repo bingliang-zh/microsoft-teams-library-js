@@ -170,19 +170,33 @@ export function sendAndHandleSdkError<T>(actionName: string, ...args: any[]): Pr
 }
 
 /**
+ * @internal
+ * Limited to Microsoft-internal use
+ */
+export function sendMessageToParentAsyncWithVersion<T>(
+  apiVersion: string,
+  actionName: string,
+  args: any[] = undefined,
+): Promise<T> {
+  return new Promise((resolve) => {
+    const request = sendMessageToParentHelper(apiVersion, actionName, args);
+    /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
+    resolve(waitForResponse<T>(request.id));
+  });
+}
+
+/**
  * @hidden
  * Send a message to parent. Uses nativeInterface on mobile to communicate with parent context
  *
  * @internal
  * Limited to Microsoft-internal use
  */
-export function sendMessageToParentAsync<T>(
-  actionName: string,
-  args: any[] = undefined,
-  apiVersion = 'v0',
-): Promise<T> {
+export function sendMessageToParentAsync<T>(actionName: string, args: any[] = undefined): Promise<T> {
   return new Promise((resolve) => {
-    const request = sendMessageToParentHelper(apiVersion, actionName, args);
+    // APIs with v0 represents beta changes haven't been implemented on them
+    // Otherwise, minimum version number will be v1
+    const request = sendMessageToParentHelper('v0', actionName, args);
     /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
     resolve(waitForResponse<T>(request.id));
   });
@@ -198,13 +212,17 @@ function waitForResponse<T>(requestId: number): Promise<T> {
   });
 }
 
+/**
+ * @internal
+ * Limited to Microsoft-internal use
+ */
 export function sendMessageToParentWithVersion(
-  actionName: string,
   apiVersion: string,
+  actionName: string,
   args: any[],
   callback?: Function,
 ): void {
-  const request = sendMessageToParentHelper(actionName, apiVersion, args);
+  const request = sendMessageToParentHelper(apiVersion, actionName, args);
   if (callback) {
     CommunicationPrivate.callbacks[request.id] = callback;
   }
@@ -238,7 +256,9 @@ export function sendMessageToParent(actionName: string, argsOrCallback?: any[] |
   }
 
   /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
-  const request = sendMessageToParentHelper(actionName, 'v1', args);
+  // APIs with v0 represents beta changes haven't been implemented on them
+  // Otherwise, minimum version number will be v1
+  const request = sendMessageToParentHelper('v0', actionName, args);
   if (callback) {
     CommunicationPrivate.callbacks[request.id] = callback;
   }
@@ -250,7 +270,7 @@ const sendMessageToParentHelperLogger = communicationLogger.extend('sendMessageT
  * @internal
  * Limited to Microsoft-internal use
  */
-function sendMessageToParentHelper(actionName: string, apiVersion: string, args: any[]): MessageRequest {
+function sendMessageToParentHelper(apiVersion: string, actionName: string, args: any[]): MessageRequest {
   const logger = sendMessageToParentHelperLogger;
 
   const targetWindow = Communication.parentWindow;
