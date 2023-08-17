@@ -176,9 +176,13 @@ export function sendAndHandleSdkError<T>(actionName: string, ...args: any[]): Pr
  * @internal
  * Limited to Microsoft-internal use
  */
-export function sendMessageToParentAsync<T>(actionName: string, args: any[] = undefined): Promise<T> {
+export function sendMessageToParentAsync<T>(
+  actionName: string,
+  args: any[] = undefined,
+  apiVersion = 'v0',
+): Promise<T> {
   return new Promise((resolve) => {
-    const request = sendMessageToParentHelper(actionName, args);
+    const request = sendMessageToParentHelper(apiVersion, actionName, args);
     /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
     resolve(waitForResponse<T>(request.id));
   });
@@ -198,7 +202,7 @@ function waitForResponse<T>(requestId: number): Promise<T> {
  * @internal
  * Limited to Microsoft-internal use
  */
-export function sendMessageToParent(actionName: string, callback?: Function): void;
+export function sendMessageToParent(actionName: string, callback?: Function, apiVersion?: string): void;
 
 /**
  * @hidden
@@ -207,22 +211,43 @@ export function sendMessageToParent(actionName: string, callback?: Function): vo
  * @internal
  * Limited to Microsoft-internal use
  */
-export function sendMessageToParent(actionName: string, args: any[], callback?: Function): void;
+export function sendMessageToParent(actionName: string, args: any[], callback?: Function, apiVersion?: string): void;
 
 /**
  * @internal
  * Limited to Microsoft-internal use
  */
-export function sendMessageToParent(actionName: string, argsOrCallback?: any[] | Function, callback?: Function): void {
+export function sendMessageToParent(
+  actionName: string,
+  argsOrCallbackOrApiVersion?: any[] | Function | string,
+  callbackOrApiVersion?: Function | string,
+  apiVersion?: string,
+): void {
   let args: any[] | undefined;
-  if (argsOrCallback instanceof Function) {
-    callback = argsOrCallback;
-  } else if (argsOrCallback instanceof Array) {
-    args = argsOrCallback;
+  let callback: Function | undefined;
+
+  if (argsOrCallbackOrApiVersion instanceof Function) {
+    callback = argsOrCallbackOrApiVersion;
+    if (typeof callbackOrApiVersion === 'string') {
+      apiVersion = callbackOrApiVersion;
+    }
+  } else if (argsOrCallbackOrApiVersion instanceof Array) {
+    args = argsOrCallbackOrApiVersion;
+    if (callbackOrApiVersion instanceof Function) {
+      callback = callbackOrApiVersion;
+    } else if (typeof callbackOrApiVersion === 'string') {
+      apiVersion = callbackOrApiVersion;
+    }
+  } else if (typeof argsOrCallbackOrApiVersion === 'string') {
+    apiVersion = argsOrCallbackOrApiVersion;
+  }
+
+  if (!apiVersion) {
+    apiVersion = 'v0';
   }
 
   /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
-  const request = sendMessageToParentHelper(actionName, args);
+  const request = sendMessageToParentHelper(apiVersion, actionName, args);
   if (callback) {
     CommunicationPrivate.callbacks[request.id] = callback;
   }
@@ -234,11 +259,11 @@ const sendMessageToParentHelperLogger = communicationLogger.extend('sendMessageT
  * @internal
  * Limited to Microsoft-internal use
  */
-function sendMessageToParentHelper(actionName: string, args: any[]): MessageRequest {
+function sendMessageToParentHelper(apiVersion: string, actionName: string, args: any[]): MessageRequest {
   const logger = sendMessageToParentHelperLogger;
 
   const targetWindow = Communication.parentWindow;
-  const request = createMessageRequest(actionName, args);
+  const request = createMessageRequest(apiVersion, actionName, args);
 
   /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
   logger('Message %i information: %o', request.id, { actionName, args });
@@ -430,19 +455,25 @@ function handleChildMessage(evt: DOMMessageEvent): void {
   if ('id' in evt.data && 'func' in evt.data) {
     // Try to delegate the request to the proper handler, if defined
     const message = evt.data as MessageRequest;
+    const apiVersion = message.apiversion;
     const [called, result] = callHandler(message.func, message.args);
     if (called && typeof result !== 'undefined') {
       /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
       sendMessageResponseToChild(message.id, Array.isArray(result) ? result : [result]);
     } else {
       // No handler, proxy to parent
-      sendMessageToParent(message.func, message.args, (...args: any[]): void => {
-        if (Communication.childWindow) {
-          const isPartialResponse = args.pop();
-          /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
-          sendMessageResponseToChild(message.id, args, isPartialResponse);
-        }
-      });
+      sendMessageToParent(
+        message.func,
+        message.args,
+        (...args: any[]): void => {
+          if (Communication.childWindow) {
+            const isPartialResponse = args.pop();
+            /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
+            sendMessageResponseToChild(message.id, args, isPartialResponse);
+          }
+        },
+        apiVersion,
+      );
     }
   }
 }
@@ -545,12 +576,13 @@ export function sendMessageEventToChild(actionName: string, args?: any[]): void 
  * @internal
  * Limited to Microsoft-internal use
  */
-function createMessageRequest(func: string, args: any[]): MessageRequest {
+function createMessageRequest(apiVersion: string, func: string, args: any[]): MessageRequest {
   return {
     id: CommunicationPrivate.nextMessageId++,
     func: func,
     timestamp: Date.now(),
     args: args || [],
+    apiversion: apiVersion,
   };
 }
 
@@ -568,7 +600,7 @@ function createMessageResponse(id: number, args: any[], isPartialResponse: boole
 
 /**
  * @hidden
- * Creates a message object without any id, used for custom actions being sent to child frame/window
+ * Creates a message object without any id and api version, used for custom actions being sent to child frame/window
  *
  * @internal
  * Limited to Microsoft-internal use
