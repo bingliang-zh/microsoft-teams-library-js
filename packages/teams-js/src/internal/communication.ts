@@ -198,11 +198,23 @@ function waitForResponse<T>(requestId: number): Promise<T> {
   });
 }
 
+export function sendMessageToParentWithVersion(
+  actionName: string,
+  apiVersion: string,
+  args: any[],
+  callback?: Function,
+): void {
+  const request = sendMessageToParentHelper(actionName, apiVersion, args);
+  if (callback) {
+    CommunicationPrivate.callbacks[request.id] = callback;
+  }
+}
+
 /**
  * @internal
  * Limited to Microsoft-internal use
  */
-export function sendMessageToParent(actionName: string, callback?: Function, apiVersion?: string): void;
+export function sendMessageToParent(actionName: string, callback?: Function): void;
 
 /**
  * @hidden
@@ -211,43 +223,22 @@ export function sendMessageToParent(actionName: string, callback?: Function, api
  * @internal
  * Limited to Microsoft-internal use
  */
-export function sendMessageToParent(actionName: string, args: any[], callback?: Function, apiVersion?: string): void;
+export function sendMessageToParent(actionName: string, args: any[], callback?: Function): void;
 
 /**
  * @internal
  * Limited to Microsoft-internal use
  */
-export function sendMessageToParent(
-  actionName: string,
-  argsOrCallbackOrApiVersion?: any[] | Function | string,
-  callbackOrApiVersion?: Function | string,
-  apiVersion?: string,
-): void {
+export function sendMessageToParent(actionName: string, argsOrCallback?: any[] | Function, callback?: Function): void {
   let args: any[] | undefined;
-  let callback: Function | undefined;
-
-  if (argsOrCallbackOrApiVersion instanceof Function) {
-    callback = argsOrCallbackOrApiVersion;
-    if (typeof callbackOrApiVersion === 'string') {
-      apiVersion = callbackOrApiVersion;
-    }
-  } else if (argsOrCallbackOrApiVersion instanceof Array) {
-    args = argsOrCallbackOrApiVersion;
-    if (callbackOrApiVersion instanceof Function) {
-      callback = callbackOrApiVersion;
-    } else if (typeof callbackOrApiVersion === 'string') {
-      apiVersion = callbackOrApiVersion;
-    }
-  } else if (typeof argsOrCallbackOrApiVersion === 'string') {
-    apiVersion = argsOrCallbackOrApiVersion;
-  }
-
-  if (!apiVersion) {
-    apiVersion = 'v0';
+  if (argsOrCallback instanceof Function) {
+    callback = argsOrCallback;
+  } else if (argsOrCallback instanceof Array) {
+    args = argsOrCallback;
   }
 
   /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
-  const request = sendMessageToParentHelper(apiVersion, actionName, args);
+  const request = sendMessageToParentHelper(actionName, 'v1', args);
   if (callback) {
     CommunicationPrivate.callbacks[request.id] = callback;
   }
@@ -259,7 +250,7 @@ const sendMessageToParentHelperLogger = communicationLogger.extend('sendMessageT
  * @internal
  * Limited to Microsoft-internal use
  */
-function sendMessageToParentHelper(apiVersion: string, actionName: string, args: any[]): MessageRequest {
+function sendMessageToParentHelper(actionName: string, apiVersion: string, args: any[]): MessageRequest {
   const logger = sendMessageToParentHelperLogger;
 
   const targetWindow = Communication.parentWindow;
@@ -455,25 +446,19 @@ function handleChildMessage(evt: DOMMessageEvent): void {
   if ('id' in evt.data && 'func' in evt.data) {
     // Try to delegate the request to the proper handler, if defined
     const message = evt.data as MessageRequest;
-    const apiVersion = message.apiversion;
     const [called, result] = callHandler(message.func, message.args);
     if (called && typeof result !== 'undefined') {
       /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
       sendMessageResponseToChild(message.id, Array.isArray(result) ? result : [result]);
     } else {
       // No handler, proxy to parent
-      sendMessageToParent(
-        message.func,
-        message.args,
-        (...args: any[]): void => {
-          if (Communication.childWindow) {
-            const isPartialResponse = args.pop();
-            /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
-            sendMessageResponseToChild(message.id, args, isPartialResponse);
-          }
-        },
-        apiVersion,
-      );
+      sendMessageToParent(message.func, message.args, (...args: any[]): void => {
+        if (Communication.childWindow) {
+          const isPartialResponse = args.pop();
+          /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
+          sendMessageResponseToChild(message.id, args, isPartialResponse);
+        }
+      });
     }
   }
 }
