@@ -255,9 +255,9 @@ export function sendMessageToParent(actionName: string, argsOrCallback?: any[] |
     args = argsOrCallback;
   }
 
-  /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
   // APIs with v0 represents beta changes haven't been implemented on them
   // Otherwise, minimum version number will be v1
+  /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
   const request = sendMessageToParentHelper('v0', actionName, args);
   if (callback) {
     CommunicationPrivate.callbacks[request.id] = callback;
