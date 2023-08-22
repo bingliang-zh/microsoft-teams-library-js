@@ -434,7 +434,7 @@ export namespace pages {
         versionSpecificHelper();
       }
       saveHandler = handler;
-      handler && sendMessageToParent('registerHandler', ['save']);
+      handler && sendMessageToParentWithVersion('v2', 'registerHandler', ['save']);
     }
 
     /**
@@ -472,7 +472,7 @@ export namespace pages {
         versionSpecificHelper();
       }
       removeHandler = handler;
-      handler && sendMessageToParent('registerHandler', ['remove']);
+      handler && sendMessageToParentWithVersion('v2', 'registerHandler', ['remove']);
     }
 
     function handleSave(result?: SaveParameters): void {
