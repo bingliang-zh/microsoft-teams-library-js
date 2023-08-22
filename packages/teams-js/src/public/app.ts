@@ -7,7 +7,7 @@ import {
   initializeCommunication,
   sendAndHandleStatusAndReason,
   sendAndUnwrap,
-  sendMessageToParent,
+  sendMessageToParentWithVersion,
   uninitializeCommunication,
 } from '../internal/communication';
 import { defaultSDKVersionForCompatCheck } from '../internal/constants';
@@ -723,7 +723,7 @@ export namespace app {
    */
   export function notifyAppLoaded(): void {
     ensureInitializeCalled();
-    sendMessageToParent(Messages.AppLoaded, [version]);
+    sendMessageToParentWithVersion('v2', Messages.AppLoaded, [version]);
   }
 
   /**
@@ -731,7 +731,7 @@ export namespace app {
    */
   export function notifySuccess(): void {
     ensureInitializeCalled();
-    sendMessageToParent(Messages.Success, [version]);
+    sendMessageToParentWithVersion('v2', Messages.Success, [version]);
   }
 
   /**
@@ -742,7 +742,7 @@ export namespace app {
    */
   export function notifyFailure(appInitializationFailedRequest: IFailedRequest): void {
     ensureInitializeCalled();
-    sendMessageToParent(Messages.Failure, [
+    sendMessageToParentWithVersion('v2', Messages.Failure, [
       appInitializationFailedRequest.reason,
       appInitializationFailedRequest.message,
     ]);
@@ -755,7 +755,10 @@ export namespace app {
    */
   export function notifyExpectedFailure(expectedFailureRequest: IExpectedFailureRequest): void {
     ensureInitializeCalled();
-    sendMessageToParent(Messages.ExpectedFailure, [expectedFailureRequest.reason, expectedFailureRequest.message]);
+    sendMessageToParentWithVersion('v2', Messages.ExpectedFailure, [
+      expectedFailureRequest.reason,
+      expectedFailureRequest.message,
+    ]);
   }
 
   /**
