@@ -3,9 +3,12 @@ import {
   sendAndHandleSdkError,
   sendAndHandleStatusAndReason,
   sendAndHandleStatusAndReasonWithDefaultError,
+  sendAndHandleStatusAndReasonWithVersion,
   sendAndUnwrap,
+  sendAndUnwrapWithVersion,
   sendMessageEventToChild,
   sendMessageToParent,
+  sendMessageToParentWithVersion,
 } from '../internal/communication';
 import { registerHandler, registerHandlerHelper } from '../internal/handlers';
 import { ensureInitialized } from '../internal/internalAPIs';
@@ -140,7 +143,7 @@ export namespace pages {
       if (!isSupported()) {
         throw errorNotSupportedOnPlatform;
       }
-      resolve(sendAndUnwrap('settings.getSettings'));
+      resolve(sendAndUnwrapWithVersion('v2', 'settings.getSettings'));
     });
   }
 
@@ -377,7 +380,7 @@ export namespace pages {
       if (!isSupported()) {
         throw errorNotSupportedOnPlatform;
       }
-      sendMessageToParent('settings.setValidityState', [validityState]);
+      sendMessageToParentWithVersion('v2', 'settings.setValidityState', [validityState]);
     }
 
     /**
@@ -392,7 +395,7 @@ export namespace pages {
         if (!isSupported()) {
           throw errorNotSupportedOnPlatform;
         }
-        resolve(sendAndHandleStatusAndReason('settings.setSettings', instanceConfig));
+        resolve(sendAndHandleStatusAndReasonWithVersion('v2', 'settings.setSettings', instanceConfig));
       });
     }
 
