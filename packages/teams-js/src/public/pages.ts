@@ -45,7 +45,7 @@ export namespace pages {
     if (!isSupported()) {
       throw errorNotSupportedOnPlatform;
     }
-    sendMessageToParent('returnFocus', [navigateForward]);
+    sendMessageToParentWithVersion('v2', 'returnFocus', [navigateForward]);
   }
 
   /**
@@ -79,7 +79,7 @@ export namespace pages {
     if (!isSupported()) {
       throw errorNotSupportedOnPlatform;
     }
-    sendMessageToParent('setFrameContext', [frameInfo]);
+    sendMessageToParentWithVersion('v2', 'setFrameContext', [frameInfo]);
   }
 
   /**
@@ -201,9 +201,9 @@ export namespace pages {
         throw errorNotSupportedOnPlatform;
       }
       if (runtime.isLegacyTeams) {
-        resolve(sendAndHandleStatusAndReason('executeDeepLink', createTeamsAppLink(params)));
+        resolve(sendAndHandleStatusAndReason('v2', 'executeDeepLink', createTeamsAppLink(params)));
       } else {
-        resolve(sendAndHandleStatusAndReason('pages.navigateToApp', params));
+        resolve(sendAndHandleStatusAndReasonWithVersion('v1', 'pages.navigateToApp', params));
       }
     });
   }
@@ -315,7 +315,7 @@ export namespace pages {
           throw errorNotSupportedOnPlatform;
         }
         /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
-        resolve(sendAndUnwrap('getTabInstances', tabInstanceParameters));
+        resolve(sendAndUnwrapWithVersion('v2', 'getTabInstances', tabInstanceParameters));
       });
     }
 
@@ -331,7 +331,7 @@ export namespace pages {
           throw errorNotSupportedOnPlatform;
         }
         /* eslint-disable-next-line strict-null-checks/all */ /* Fix tracked by 5730662 */
-        resolve(sendAndUnwrap('getMruTabInstances', tabInstanceParameters));
+        resolve(sendAndUnwrapWithVersion('v2', 'getMruTabInstances', tabInstanceParameters));
       });
     }
 
@@ -557,12 +557,12 @@ export namespace pages {
       }
       public notifySuccess(): void {
         this.ensureNotNotified();
-        sendMessageToParent('settings.save.success');
+        sendMessageToParentWithVersion('v1', 'settings.save.success');
         this.notified = true;
       }
       public notifyFailure(reason?: string): void {
         this.ensureNotNotified();
-        sendMessageToParent('settings.save.failure', [reason]);
+        sendMessageToParentWithVersion('v1', 'settings.save.failure', [reason]);
         this.notified = true;
       }
       private ensureNotNotified(): void {
@@ -593,13 +593,13 @@ export namespace pages {
 
       public notifySuccess(): void {
         this.ensureNotNotified();
-        sendMessageToParent('settings.remove.success');
+        sendMessageToParentWithVersion('v1', 'settings.remove.success');
         this.notified = true;
       }
 
       public notifyFailure(reason?: string): void {
         this.ensureNotNotified();
-        sendMessageToParent('settings.remove.failure', [reason]);
+        sendMessageToParentWithVersion('v1', 'settings.remove.failure', [reason]);
         this.notified = true;
       }
 
@@ -689,7 +689,7 @@ export namespace pages {
         versionSpecificHelper();
       }
       backButtonPressHandler = handler;
-      handler && sendMessageToParent('registerHandler', ['backButton']);
+      handler && sendMessageToParentWithVersion('v2', 'registerHandler', ['backButton']);
     }
 
     function handleBackButtonPress(): void {
@@ -736,7 +736,7 @@ export namespace pages {
       if (!isSupported()) {
         throw errorNotSupportedOnPlatform;
       }
-      sendMessageToParent('enterFullscreen', []);
+      sendMessageToParentWithVersion('v1', 'enterFullscreen', []);
     }
 
     /**
@@ -750,7 +750,7 @@ export namespace pages {
       if (!isSupported()) {
         throw errorNotSupportedOnPlatform;
       }
-      sendMessageToParent('exitFullscreen', []);
+      sendMessageToParentWithVersion('v1', 'exitFullscreen', []);
     }
     /**
      * @hidden
