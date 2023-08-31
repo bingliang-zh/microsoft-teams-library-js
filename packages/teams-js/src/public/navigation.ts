@@ -1,8 +1,13 @@
 import { ensureInitialized } from '../internal/internalAPIs';
+import {
+  backStackNavigateBackHelper,
+  navigateCrossDomainHelper,
+  returnFocusHelper,
+  tabsNavigateToTabHelper,
+} from '../internal/pageUtil';
 import { getGenericOnCompleteHandler } from '../internal/utils';
 import { FrameContexts } from './constants';
 import { TabInstance } from './interfaces';
-import { pages } from './pages';
 import { runtime } from './runtime';
 /**
  * Navigation specific part of the SDK.
@@ -19,7 +24,7 @@ type onCompleteHandlerFunctionType = (status: boolean, reason?: string) => void;
  * @param navigateForward - Determines the direction to focus in teams app.
  */
 export function returnFocus(navigateForward?: boolean): void {
-  pages.returnFocus(navigateForward);
+  returnFocusHelper('v1', navigateForward);
 }
 
 /**
@@ -34,8 +39,7 @@ export function returnFocus(navigateForward?: boolean): void {
 export function navigateToTab(tabInstance: TabInstance, onComplete?: onCompleteHandlerFunctionType): void {
   ensureInitialized(runtime);
   onComplete = onComplete ? onComplete : getGenericOnCompleteHandler();
-  pages.tabs
-    .navigateToTab(tabInstance)
+  tabsNavigateToTabHelper('v1', tabInstance)
     .then(() => {
       onComplete(true);
     })
@@ -69,8 +73,7 @@ export function navigateCrossDomain(url: string, onComplete?: onCompleteHandlerF
     FrameContexts.meetingStage,
   );
   onComplete = onComplete ? onComplete : getGenericOnCompleteHandler();
-  pages
-    .navigateCrossDomain(url)
+  navigateCrossDomainHelper('v1', url)
     .then(() => {
       onComplete(true);
     })
@@ -91,8 +94,7 @@ export function navigateCrossDomain(url: string, onComplete?: onCompleteHandlerF
 export function navigateBack(onComplete?: onCompleteHandlerFunctionType): void {
   ensureInitialized(runtime);
   onComplete = onComplete ? onComplete : getGenericOnCompleteHandler();
-  pages.backStack
-    .navigateBack()
+  backStackNavigateBackHelper('v1')
     .then(() => {
       onComplete(true);
     })
