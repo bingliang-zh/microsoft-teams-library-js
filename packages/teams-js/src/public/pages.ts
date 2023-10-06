@@ -14,7 +14,7 @@ import {
   navigateCrossDomainHelper,
   returnFocusHelper,
   tabsNavigateToTabHelper,
-} from '../internal/pageUtil';
+} from '../internal/pagesUtil';
 import { createTeamsAppLink } from '../internal/utils';
 import { app } from './app';
 import { errorNotSupportedOnPlatform, FrameContexts } from './constants';
@@ -44,7 +44,7 @@ export namespace pages {
    * @param navigateForward - Determines the direction to focus in host.
    */
   export function returnFocus(navigateForward?: boolean): void {
-    return returnFocusHelper('v2', navigateForward);
+    returnFocusHelper('v2', navigateForward);
   }
 
   /**
